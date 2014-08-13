@@ -1,0 +1,6 @@
+Major:
+- Make shutdown cross-platform (currently available only on Windows)
+- Allow users to choose music for the alarm
+
+Minor:
+- Fix single digit minutes display (e.g.: 21.0 instead of the correct 21.00)
