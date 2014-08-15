@@ -5,7 +5,7 @@ ALARM_SOUND = "C:\\Users\\Aspire D270\\Music\\Moongazer.mp3"
 
 def alarmClock(hour, minute):
     print(time.strftime("Started on: %H:%M"))
-    print("Alarm set for: {}:{}".format(hour, minute))
+    print("Alarm set for: {:02}:{:02}".format(hour, minute))
 	
     while True:
         localTime = time.localtime()
