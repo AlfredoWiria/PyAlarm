@@ -11,8 +11,14 @@ import threading
 ALARM_SOUND = ""
 
 # Set this to the directory + file name of an alarm list
-# Any plain text file type can be used
+# Any plaintext file type can be used
 ALARM_LIST = "alarmList.txt"
+
+####################
+# Global Variables #
+####################
+
+alarmList = []
 
 ###########
 # Classes #
@@ -27,9 +33,6 @@ class Alarm(threading.Thread):
     # Main routine of alarm clock
     # When it's time for the alarm, shutdown the computer
     def run(self):
-        print(time.strftime("Started on: %H:%M"))
-        print("Alarm set for: {:02}:{:02}".format(self.startHour, self.startMinute))
-
         while True:
             localTime = time.localtime()
             if localTime.tm_hour == self.startHour and localTime.tm_min == self.startMinute:
@@ -40,10 +43,6 @@ class Alarm(threading.Thread):
                 os.system("shutdown /s /t 1800 /c \"Time to Sleep...\"")
                 return
 
-#############
-# Functions #
-#############
-
 ################
 # Main Routine #
 ################
@@ -53,45 +52,56 @@ if __name__ == "__main__":
     print("PyAlarm")
     print("By: Alfredo Morgen")
     print("")
-        
-    choice = 0
-    while choice != 3:
-        try:
-            with open(ALARM_LIST, 'r') as alarmFile:
-                hour, minute = [int(x) for x in alarmFile.readline().split()]
-                alarm = Alarm(hour, minute)
-        except FileNotFoundError:
-            hour = -1
-            minute = -1
+    
+    # Open ALARM_LIST and get all the alarms
+    try:
+        with open(ALARM_LIST, 'r') as alarmFile:
+            for line in alarmFile:
+                hour, minute = [int(x) for x in line.split()]
+                newAlarm = Alarm(hour, minute)
+                newAlarm.start()
+                alarmList.append(newAlarm)
+    except FileNotFoundError:
+        hour = -1
+        minute = -1
 
+    choice = 0
+    while choice != 2:
+        print("PyAlarm")
+
+        # Print all the alarms
         if hour == -1 and minute == -1:
             print("Alarm has not been set")
         else:
-            print("Alarm set for: {:02}:{:02}".format(hour, minute))
+            for alarm in alarmList:
+                print("Alarm set for: {:02}:{:02}".format(alarm.startHour, alarm.startMinute))
 
-        print("1. Turn on alarm")
-        print("2. Configure alarm")
-        print("3. Exit")
-        print("")
+        print()
+        print("1. Add new alarm")
+        print("2. Exit")
+        print()
 
         try:
             choice = int(input("Choice: "))
         except Exception as e:
             print("Please input numbers only")
-
-            input("\nPress enter to continue...")
+            print()
+            input("Press enter to continue...")
 
         if choice == 1:
-            if hour == -1 and minute == -1:
-                print("Alarm has not been set")
-                print("Please set it first...")
-            else:
-                alarm.start()
-        elif choice == 2:
             try:
                 hour, minute = [int(x) for x in input("Input alarm time (in 'HH MM' format): ").split()]
+                assert hour >= 0 and hour <= 23
+                assert minute >= 0 and minute <= 59
+
+                newAlarm = Alarm(hour, minute)
+                alarmList.append(newAlarm)
+                newAlarm.start()
+
                 with open(ALARM_LIST, 'w') as alarmFile:
-                    alarmFile.write("{} {}\n".format(str(hour), str(minute)))
+                    for alarm in alarmList:
+                        alarmFile.write("{} {}\n".format(str(alarm.startHour), str(alarm.startMinute)))
+
                 print("Alarm has been successfully added!")
             except Exception as e:
                 print("Error reading time")
@@ -99,7 +109,7 @@ if __name__ == "__main__":
                 print("Example: '22 00', '12 30', or '07 05'")
 
             input("\nPress enter to continue...");
-        elif choice == 3:
+        elif choice == 2:
             pass
         else:
             print("Invalid input...")
