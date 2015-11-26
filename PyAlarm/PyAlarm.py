@@ -2,18 +2,6 @@
 import time
 import threading
 
-######################
-# Constant Variables #
-######################
-
-# Set this to the directory + file name of an alarm sound
-# Any music file type can be used
-ALARM_SOUND = ""
-
-# Set this to the directory + file name of an alarm list
-# Any plaintext file type can be used
-ALARM_LIST = "alarmList.txt"
-
 ####################
 # Global Variables #
 ####################
@@ -23,6 +11,32 @@ alarmList = []
 ###########
 # Classes #
 ###########
+
+class AlarmFile:
+    def __init__(self, fileDirectory):
+        self.fileDirectory = fileDirectory
+
+    def alarmFileOpen(self):
+        global alarmList
+
+        try:
+            with open(self.fileDirectory, 'r') as alarmFile:
+                for line in alarmFile:
+                    hour, minute = [int(x) for x in line.split()]
+                    newAlarm = Alarm(hour, minute)
+                    newAlarm.start()
+                    alarmList.append(newAlarm)
+        except FileNotFoundError:
+            open(self.fileDirectory, 'w')
+        except Exception as e:
+            print(e)
+
+    def alarmFileSave(self):
+        global alarmList
+
+        with open(self.fileDirectory, 'w') as alarmFile:
+            for alarm in alarmList:
+                alarmFile.write("{} {}\n".format(str(alarm.startHour), str(alarm.startMinute)))
 
 class Alarm(threading.Thread):
     def __init__(self, startHour, startMinute):
@@ -37,7 +51,7 @@ class Alarm(threading.Thread):
             localTime = time.localtime()
             if localTime.tm_hour == self.startHour and localTime.tm_min == self.startMinute:
                 print("It's time to sleep...")
-                os.startfile(ALARM_SOUND)
+                # os.startfile(ALARM_SOUND)
 
                 # Shutdown Windows via Command Prompt
                 os.system("shutdown /s /t 1800 /c \"Time to Sleep...\"")
@@ -52,33 +66,27 @@ if __name__ == "__main__":
     print("PyAlarm")
     print("By: Alfredo Morgen")
     print("")
-    
-    # Open ALARM_LIST and get all the alarms
-    try:
-        with open(ALARM_LIST, 'r') as alarmFile:
-            for line in alarmFile:
-                hour, minute = [int(x) for x in line.split()]
-                newAlarm = Alarm(hour, minute)
-                newAlarm.start()
-                alarmList.append(newAlarm)
-    except FileNotFoundError:
-        hour = -1
-        minute = -1
+
+    alarmFileObject = AlarmFile("alarmList.txt")
+    alarmFileObject.alarmFileOpen()
 
     choice = 0
-    while choice != 2:
+    while choice != 3:
         print("PyAlarm")
 
         # Print all the alarms
-        if hour == -1 and minute == -1:
+        if len(alarmList) == 0:
             print("Alarm has not been set")
         else:
             for alarm in alarmList:
-                print("Alarm set for: {:02}:{:02}".format(alarm.startHour, alarm.startMinute))
+                print("{}. Alarm set for: {:02}:{:02}".format(alarmList.index(alarm) + 1, alarm.startHour, alarm.startMinute))
 
         print()
-        print("1. Add new alarm")
-        print("2. Exit")
+        print("Menu")
+        print("====")
+        print("1. Add alarm")
+        print("2. Delete alarm")
+        print("3. Exit")
         print()
 
         try:
@@ -98,10 +106,7 @@ if __name__ == "__main__":
                 alarmList.append(newAlarm)
                 newAlarm.start()
 
-                with open(ALARM_LIST, 'w') as alarmFile:
-                    for alarm in alarmList:
-                        alarmFile.write("{} {}\n".format(str(alarm.startHour), str(alarm.startMinute)))
-
+                alarmFileObject.alarmFileSave()
                 print("Alarm has been successfully added!")
             except Exception as e:
                 print("Error reading time")
@@ -110,6 +115,20 @@ if __name__ == "__main__":
 
             input("\nPress enter to continue...");
         elif choice == 2:
+            if len(alarmList) != 0:
+                try:
+                    alarmIndexDelete = int(input("Input the index of alarm you want to delete : "))
+                    alarmList.pop(alarmIndexDelete - 1)
+                    alarmFileObject.alarmFileSave()
+                    print("Alarm has been successfully deleted!")
+                except Exception as e:
+                    print("Error reading input")
+                    print("Please input only numbers (without leading zeroes) (e.g: 1, 4, 8)")
+            else:
+                print("There is no alarm")
+            
+            input("\nPress enter to continue...");
+        elif choice == 3:
             pass
         else:
             print("Invalid input...")
